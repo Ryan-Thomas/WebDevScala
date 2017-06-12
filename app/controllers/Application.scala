@@ -1,17 +1,34 @@
 package controllers
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
-import play.api._
+import model.SunInfo
+import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTimeZone, DateTime}
+import play.api.libs.ws.WS
 import play.api.mvc._
 
-import scala.concurrent.Future
+import play.api.Play.current
+
+// you need to import this or you will get a compile error stating "Cannot find an 
+// implicit ExecutionContext. You might pass or import 
+// scala.concurrent.ExecutionContext.Implicits.global"
+// That's actually a really helpful error message
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Application extends Controller {
+    
     def index = Action.async {
-        val date = new Date()
-        val dateStr = new SimpleDateFormat().format(date)
-        Future.successful { Ok(views.html.index(dateStr)) }
+        val responseF = WS.url("http://api.sunrise-sunset.org/json?" +
+            "lat=-33.8830&lng=151.2167&formatted=0").get()
+        responseF.map { response => 
+            val json = response.json
+            val sunriseTimeStr = (json \ "results" \ "sunrise").as[String]
+            val sunsetTimeStr = (json \ "results" \ "sunset").as[String]
+            val sunriseTime = DateTime.parse(sunriseTimeStr)
+            val sunsetTime = DateTime.parse(sunsetTimeStr)
+            val formatter = DateTimeFormat.forPattern("HH:mm:ss")
+                .withZone(DateTimeZone.forID("Australia/Sydney"))
+            val sunInfo = SunInfo(formatter.print(sunriseTime), formatter.print(sunsetTime))
+            Ok(views.html.index(sunInfo))
+        }
     }
 }

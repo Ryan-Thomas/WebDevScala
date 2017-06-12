@@ -1,4 +1,4 @@
-@(timeStr: String)
+@(sunInfo: model.SunInfo)
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -8,5 +8,8 @@
     </head>
     <body>
         <h1>Hello Play</h1>
+        
+        <div>Sunrise time: @sunInfo.sunrise</div>
+        <div>Sunset time: @sunInfo.sunset</div>
     </body>
 </html>
