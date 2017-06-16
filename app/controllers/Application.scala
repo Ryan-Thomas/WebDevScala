@@ -2,11 +2,11 @@ package controllers
 
 import model.SunInfo
 import org.joda.time.format.DateTimeFormat
-import org.joda.time.{DateTimeZone, DateTime}
-import play.api.libs.ws.{WSResponse, WS}
+import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.ws.{WS, WSResponse}
 import play.api.mvc._
-
 import play.api.Play.current
+import services.{SunService, WeatherService}
 
 import scala.concurrent.Future
 
@@ -18,27 +18,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class Application extends Controller {
     
+    val sunService = new SunService
+    val weatherService = new WeatherService
+    
     def index = Action.async {
-        val responseF = WS.url("http://api.sunrise-sunset.org/" +
-            "json?lat=-33.8830&lng=151.2167&formatted=0").get()
-        val weatherResponseF = WS.url("http://api.openweathermap.org/data/2.5/" +
-            "weather?lat=-33.8830&lon=151.2167&units=metric").get()
-        
+        val lat = -33.8830
+        val lon = 151.2167
+        val sunInfoF = sunService.getSunInfo(lat, lon)
+        val temperatureF = weatherService.getTemperature(lat, lon)
         for {
-            response <- responseF
-            weatherResponse <- weatherResponseF
+            sunInfo <- sunInfoF
+            temperature <- temperatureF
         } yield {
-            val weatherJson = weatherResponse.json
-            val temperature = (weatherJson \ "main" \ "temp").as[Double]
-            val json = response.json
-            val sunriseTimeStr = (json \ "results" \ "sunrise").as[String]
-            val sunsetTimeStr = (json \ "results" \ "sunset").as[String]
-            val sunriseTime = DateTime.parse(sunriseTimeStr)
-            val sunsetTime = DateTime.parse(sunsetTimeStr)
-            val formatter = DateTimeFormat.forPattern("HH:mm:ss")
-                .withZone(DateTimeZone.forID("Australia/Sydney"))
-            val sunInfo = SunInfo(formatter.print(sunriseTime),
-                formatter.print(sunsetTime))
             Ok(views.html.index(sunInfo, temperature))
         }
     }
