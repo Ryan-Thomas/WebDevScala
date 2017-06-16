@@ -3,16 +3,14 @@ package services
 import model.SunInfo
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
-import play.api.libs.ws.WS
+import play.api.libs.ws.WSClient
 
-import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.concurrent.Future
 
-class SunService {
+class SunService(wsClient: WSClient) {
     def getSunInfo(lat: Double, lon: Double): Future[SunInfo] = {
-        val responseF = WS.url("http://api.sunrise-sunset.org/" +
+        val responseF = wsClient.url("http://api.sunrise-sunset.org/" +
             "json?lat=-33.8830&lng=151.2167&formatted=0").get()
         responseF.map { response => 
             val json = response.json

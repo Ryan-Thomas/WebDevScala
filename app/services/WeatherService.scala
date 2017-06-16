@@ -1,13 +1,14 @@
 package services
 
-import play.api.libs.ws.WS
+import play.api.libs.ws.WSClient
+
 import scala.concurrent.Future
-import play.api.Play.current
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class WeatherService {
+class WeatherService(wsClient: WSClient) {
     def getTemperature(lat: Double, lon: Double): Future[Double] = {
-        val weatherResponseF = WS.url(
+        val weatherResponseF = wsClient.url(
             "http://api.openweathermap.org/data/2.5/weather?" +
                 s"lat=$lat&lon=$lon&units=metric").get()
         weatherResponseF.map { weatherResponse =>
